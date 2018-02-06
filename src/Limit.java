@@ -1,8 +1,6 @@
 import twitter4j.*;
 import twitter4j.conf.ConfigurationBuilder;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.Map;
 
 public class Limit {
@@ -22,12 +20,20 @@ public class Limit {
             Twitter twitter = tf.getInstance();
 
 
-            Map<String, RateLimitStatus> map = twitter.getRateLimitStatus("friends,statuses");
+            Map<String, RateLimitStatus> map = twitter.getRateLimitStatus("friends,statuses,users");
 
             int size = map.entrySet().toArray().length;
 
             for (int i = 0; i<size;i++){
                 System.out.println(map.entrySet().toArray()[i]);
             }
+
+            try{
+                System.out.println(twitter.getUserTimeline(911927618676633600L, new Paging(1,200)));
+            }
+            catch(TwitterException te){
+
+            }
+
         }
 }

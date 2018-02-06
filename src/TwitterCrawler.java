@@ -1,7 +1,11 @@
 import twitter4j.*;
 import twitter4j.conf.ConfigurationBuilder;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +21,7 @@ public class TwitterCrawler {
         String ConsumerSecret = "L1KVo62xOYAVZZhx9kD4tGVnZugLfbJLbbmcYJBt6g9XYjjvfi";
         String AccessToken = "636879179-yvnBY1rIzsQa5WqhtekktwPkI28QTL2kP1tUPGzj";
         String AccessTokenSecret = "dcx7IBY2j1qUXmGtismxafSFwTNWbCvdyjnvQ9GetufRP";
+        boolean restart = true;
 
         int time = 1005;
 
@@ -33,20 +38,63 @@ public class TwitterCrawler {
 
         Twitter twitter = tf.getInstance();
 
-        BufferedWriter bw = new BufferedWriter(new FileWriter(nameFileName));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(nameFileName, restart));
 
         HashMap<Long, Integer> userids = new HashMap<>();
 
-        List<User> users = twitter.getFriendsList(twitter.getId(), -1, 200);
+        List<User> users;
 
-        System.out.println("Friend Count: " + users.size());
+        if (!restart) {
 
-        for (User user : users) {
+            try {
 
-            if (user.getFollowersCount() > 200 && user.getStatusesCount() > 1000 && !user.isProtected() && user.getId() % 3 == 0) {
+                users = twitter.getFriendsList(twitter.getId(), -1, 200);
 
-                userids.put(user.getId(), 0);
+                System.out.println("Friend Count: " + users.size());
+
+                for (User user : users) {
+
+                    if (user.getFollowersCount() > 200 && user.getStatusesCount() > 1000 && !user.isProtected() && user.getId() % 3 == 0) {
+
+                        userids.put(user.getId(), 0);
+                    }
+
+                }
+
+            } catch (TwitterException te) {
+                System.out.println("User Error: " + te.getErrorMessage());
             }
+
+        }
+        else
+        {
+            String[] wordsarray;
+            BufferedReader br=new BufferedReader(new FileReader(nameFileName));
+            String line;
+
+            while ((line=br.readLine())!=null)
+            {
+
+                wordsarray = line.split("\t");
+
+                try {
+
+                    for (String word : wordsarray) {
+
+                        if (StringUtils.isNumeric(word)) {
+
+                            userids.put(Long.valueOf(word), 1);
+
+                        }
+                    }
+
+                }
+                catch(Exception ex){
+
+                    System.out.println("User ID reading error");
+                }
+            }
+
 
         }
 
@@ -73,24 +121,39 @@ public class TwitterCrawler {
                     if ((value % 2) == 0) {
 
                         for (int page = 1; page <= 5; page++) {
+
                             pair.setValue(value | 1);
-                            List<Status> statuses = twitter.getUserTimeline(userid, new Paging(page, 200));
-                            System.out.println("Statuses Count: " + statuses.size());
 
                             try {
 
-                                for (Status st : statuses) {
+                                List<Status> statuses = twitter.getUserTimeline(userid, new Paging(page, 200));
+                                System.out.println("Statuses Count: " + statuses.size());
 
-                                    bw.write(st.getUser().getId() + "\t" + st.getUser().getName() + "\t" + st.getText());
-                                    bw.newLine();
-                                    //System.out.println(st.getUser().getName() + "------" + st.getText());
+                                try {
+
+                                    for (Status st : statuses) {
+
+                                        String text = st.getText().replaceAll("\r?\n", "   ");
+
+                                        bw.write(st.getUser().getId() + "\t" + st.getUser().getName() + "\t" + text);
+                                        bw.newLine();
+                                        //System.out.println(st.getUser().getName() + "------" + st.getText());
+
+                                    }
+                                    bw.flush();
+
+                                } catch (Exception ex) {
+
+                                    System.out.println(nameFileName + "\tRound:\t" + count + "\tfailed");
 
                                 }
                                 bw.flush();
 
-                            } catch (Exception te) {
-
-                                System.out.println(nameFileName + "\tRound:\t" + count + "\tfailed");
+                            }
+                            catch (TwitterException te){
+                                System.out.println("Timeline Error: " + te.getErrorMessage());
+                                Thread.sleep(time);
+                                break;
                             }
 
                             System.out.println("counter: " + count++);
@@ -99,26 +162,31 @@ public class TwitterCrawler {
                         }
                     }
 
-                    if (count >= 120)
+                    if (count >= 120){
+
+                        breakmark = true;
                         break;
+                    }
+
                 }
             }
 
             System.out.println("Step to II, count: " + count);
 
-            Map<String, RateLimitStatus> map = twitter.getRateLimitStatus("statuses,friends");
+//            Map<String, RateLimitStatus> map = twitter.getRateLimitStatus("statuses,friends");
+//
+//            int size = map.entrySet().toArray().length;
+//
+//            for (int i = 0; i < size; i++) {
+//                System.out.println(map.entrySet().toArray()[i]);
+//            }
 
-            int size = map.entrySet().toArray().length;
 
-            for (int i = 0; i < size; i++) {
-                System.out.println(map.entrySet().toArray()[i]);
-            }
+            if ((count == 0 && restart) || count >= 120 && userids.size() < 1000000) {
 
-
-            if (count >= 120 && userids.size() < 1000000) {
+                restart =false;
 
                 for (Map.Entry<Long, Integer> pair : userids.entrySet()) {
-
 
                     long userid = pair.getKey();
                     int value = pair.getValue();
@@ -127,22 +195,29 @@ public class TwitterCrawler {
 
                     if ((value / 2) == 0) {
 
-                        users = twitter.getFriendsList(userid, -1, 200);
-                        users.addAll(twitter.getFollowersList(userid, -1, 200));
-                        pair.setValue(value | 2);
+                        try {
 
-                        System.out.println("Friend Follower Count: " + users.size());
+                            users = twitter.getFriendsList(userid, -1, 200);
+                            users.addAll(twitter.getFollowersList(userid, -1, 200));
+                            pair.setValue(value | 2);
 
-                        for (User user : users) {
+                            System.out.println("Friend Follower Count: " + users.size());
 
+                            for (User user : users) {
 
-                            if (!userids.containsKey(user.getId()) && !user.isProtected() && user.getFollowersCount() > 200
-                                    && user.getStatusesCount() >= 1000 && user.getId() % 3 == 0)
-                            {
+                                if (!userids.containsKey(user.getId()) && !user.isProtected() && user.getFollowersCount() > 200
+                                        && user.getStatusesCount() >= 1000 && user.getId() % 3 == 0) {
 
-                                userids.put(user.getId(), 0);
+                                    userids.put(user.getId(), 0);
+
+                                }
 
                             }
+                        }
+                        catch(TwitterException te){
+
+                            System.out.println("User Error: "+te.getErrorMessage());
+                            userids.remove(userid);
 
                         }
 
