@@ -8,7 +8,7 @@ public class ReaderTest {
 
     public static void main(String[] args) throws Exception {
         ArrayList<Long> ids=new ArrayList<Long>();
-        BufferedReader br=new BufferedReader(new FileReader("./Tweets"));
+        BufferedReader br=new BufferedReader(new FileReader("./TestInput"));
         String line;
 
         String[] wordsarray;
@@ -21,18 +21,23 @@ public class ReaderTest {
 
             wordsarray = StringUtils.split(line,"\t");
 
-            if (wordsarray.length > 0){
+            if (wordsarray.length == 5){
 
                 try {
 
-                    if (StringUtils.isNumeric(wordsarray[0])) {
+                    if (StringUtils.isNumeric(wordsarray[0]) && Long.valueOf(wordsarray[0]) > 100000) {
 
-                        System.out.println(linenumber + " " + Long.valueOf(wordsarray[0]));
+                        String[] test2 = wordsarray[4].split(";;");
+
+                        String[] test3 = test2[0].split(",");
+
+                        System.out.println(linenumber + " " + test3[0]);
+
                     }
 
                 }
                 catch(Exception ex){
-                    continue;
+                    System.out.println("Error: "+line);
                 }
             }
 
