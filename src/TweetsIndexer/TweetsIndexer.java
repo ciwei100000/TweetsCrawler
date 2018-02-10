@@ -3,6 +3,7 @@ package TweetsIndexer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.*;
@@ -110,10 +111,10 @@ public class TweetsIndexer {
 
             Map<String, Analyzer> analyzerPerField = new HashMap<>();
             analyzerPerField.put("userid", new KeywordAnalyzer());
-            analyzerPerField.put("username", new KeywordAnalyzer());
-            analyzerPerField.put("hashtag", new KeywordAnalyzer());
+            analyzerPerField.put("username", new SimpleAnalyzer());
+            analyzerPerField.put("hashtag", new SimpleAnalyzer());
             analyzerPerField.put("url", new KeywordAnalyzer());
-            analyzerPerField.put("mention", new KeywordAnalyzer());
+            analyzerPerField.put("mention", new SimpleAnalyzer());
 
             return new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzerPerField);
         }
