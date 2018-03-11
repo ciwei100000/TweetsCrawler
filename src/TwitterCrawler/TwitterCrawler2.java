@@ -82,9 +82,9 @@ public class TwitterCrawler2 {
 
                     if (wordsarray.length > 0) {
 
-                        if (StringUtils.isNumeric(wordsarray[0]) && Long.valueOf(wordsarray[0]) > 100000) {
+                        if (StringUtils.isNumeric(wordsarray[0]) && StringUtils.isNumeric(wordsarray[1])  && Long.valueOf(wordsarray[1]) > 100000) {
 
-                            userids.put(Long.valueOf(wordsarray[0]), 1);
+                            userids.put(Long.valueOf(wordsarray[1]), 1);
 
                         }
                     }
@@ -94,7 +94,6 @@ public class TwitterCrawler2 {
                     System.out.println("User ID reading error");
                 }
             }
-
 
         }
 
@@ -136,12 +135,24 @@ public class TwitterCrawler2 {
                                         String text = st.getText().replaceAll("\r?\n", "   ")
                                                     .replaceAll("\t", "  ");
 
-                                        StringBuilder stringBuilder = new StringBuilder().append(st.getUser().getId())
-                                                .append("\t").append(st.getUser().getScreenName()).append("\t")
+
+                                        StringBuilder stringBuilder = new StringBuilder().append(st.getId())
+                                                .append("\t")
+                                                .append(st.getUser().getId()).append("\t")
+                                                .append(st.getUser().getScreenName()).append("\t")
                                                 .append(st.getUser().getName().replaceAll("\t", "  ")).append("\t")
                                                 .append(text).append("\t");
 
                                         try {
+
+                                            stringBuilder.append("RtID,");
+
+                                            if (st.isRetweet()){
+
+                                                stringBuilder.append(st.getRetweetedStatus().getId());
+                                            }
+
+                                            stringBuilder.append(";;");
 
                                             stringBuilder.append("#");
 
