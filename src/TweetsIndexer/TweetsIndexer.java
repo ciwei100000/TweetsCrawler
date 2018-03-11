@@ -34,7 +34,7 @@ public class TweetsIndexer {
 
             String[] wordsarray = StringUtils.split(linedoc, "\t");
 
-            if (wordsarray.length == 6 && StringUtils.isNumeric(wordsarray[0]) && StringUtils.isNumeric(wordsarray[1]) && Long.valueOf(wordsarray[1]) > 100000) {
+            if (wordsarray.length == 7 && StringUtils.isNumeric(wordsarray[0]) && StringUtils.isNumeric(wordsarray[1]) && Long.valueOf(wordsarray[1]) > 100000) {
 
                 String tweetid, userid, content, userscreenname, username, position, tweets;
 
@@ -49,7 +49,7 @@ public class TweetsIndexer {
                 tweets = username + "\t" + content;
 
 
-                String[] tweetEntity = StringUtils.split(wordsarray[4], ";;");
+                String[] tweetEntity = StringUtils.split(wordsarray[5], ";;");
 
                 if (tweetEntity.length == 4) {
 
@@ -59,7 +59,7 @@ public class TweetsIndexer {
                     String[] mentions = tweetEntity[3].split(",");
 
                     for (int i = 1; i<retweetid.length; ++i){
-                        doc.add(new StringField("retweetid", hashtags[i], Field.Store.NO));
+                        doc.add(new StringField("retweetid", retweetid[i], Field.Store.NO));
                     }
 
                     for (int i = 1; i < hashtags.length; ++i) {
@@ -76,7 +76,7 @@ public class TweetsIndexer {
 
                 }
 
-                doc.add(new StoredField("tweetid", tweetid));
+                doc.add(new StringField("tweetid", tweetid, Field.Store.NO));
 
                 doc.add(new TextField("content", new StringReader(content)));
 
@@ -117,9 +117,11 @@ public class TweetsIndexer {
 
             Map<String, Analyzer> analyzerPerField = new HashMap<>();
             analyzerPerField.put("userid", new KeywordAnalyzer());
+            analyzerPerField.put("tweetid", new KeywordAnalyzer());
             analyzerPerField.put("username", new SimpleAnalyzer());
             analyzerPerField.put("hashtag", new SimpleAnalyzer());
             analyzerPerField.put("url", new KeywordAnalyzer());
+            analyzerPerField.put("retweetid", new KeywordAnalyzer());
             analyzerPerField.put("mention", new SimpleAnalyzer());
 
             return new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzerPerField);
