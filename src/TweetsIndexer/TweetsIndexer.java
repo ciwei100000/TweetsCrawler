@@ -34,28 +34,33 @@ public class TweetsIndexer {
 
             String[] wordsarray = StringUtils.split(linedoc, "\t");
 
-            if (wordsarray.length == 6 && StringUtils.isNumeric(wordsarray[0]) && Long.valueOf(wordsarray[0]) > 100000) {
+            if (wordsarray.length == 6 && StringUtils.isNumeric(wordsarray[0]) && StringUtils.isNumeric(wordsarray[1]) && Long.valueOf(wordsarray[1]) > 100000) {
 
-                String userid, content, userscreenname, username, position, tweets;
+                String tweetid, userid, content, userscreenname, username, position, tweets;
 
                 Document doc = new Document();
 
-
-                userid = wordsarray[0];
-                username = wordsarray[1];
-                userscreenname = wordsarray[2];
-                content = wordsarray[3];
-                position = wordsarray[5];
+                tweetid = wordsarray[0];
+                userid = wordsarray[1];
+                username = wordsarray[2];
+                userscreenname = wordsarray[3];
+                content = wordsarray[4];
+                position = wordsarray[6];
                 tweets = username + "\t" + content;
 
 
                 String[] tweetEntity = StringUtils.split(wordsarray[4], ";;");
 
-                if (tweetEntity.length == 3) {
+                if (tweetEntity.length == 4) {
 
-                    String[] hashtags = tweetEntity[0].split(",");
-                    String[] urls = tweetEntity[1].split(",");
-                    String[] mentions = tweetEntity[2].split(",");
+                    String[] retweetid = tweetEntity[0].split(",");
+                    String[] hashtags = tweetEntity[1].split(",");
+                    String[] urls = tweetEntity[2].split(",");
+                    String[] mentions = tweetEntity[3].split(",");
+
+                    for (int i = 1; i<retweetid.length; ++i){
+                        doc.add(new StringField("retweetid", hashtags[i], Field.Store.NO));
+                    }
 
                     for (int i = 1; i < hashtags.length; ++i) {
                         doc.add(new StringField("hashtag", hashtags[i], Field.Store.NO));
@@ -71,6 +76,7 @@ public class TweetsIndexer {
 
                 }
 
+                doc.add(new StoredField("tweetid", tweetid));
 
                 doc.add(new TextField("content", new StringReader(content)));
 

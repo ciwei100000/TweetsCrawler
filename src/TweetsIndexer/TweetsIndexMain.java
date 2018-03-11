@@ -75,11 +75,11 @@ public class TweetsIndexMain {
 
                 wordsarray = StringUtils.split(line, "\t");
 
-                if (wordsarray.length == 5) {
+                if (wordsarray.length == 6) {
 
                     try {
 
-                        if (StringUtils.isNumeric(wordsarray[0]) && Long.valueOf(wordsarray[0]) > 100000) {
+                        if (StringUtils.isNumeric(wordsarray[0]) && StringUtils.isNumeric(wordsarray[1]) && Long.valueOf(wordsarray[1]) > 100000) {
 
                             tweetsIndexer.Indexing(line + "\t" + indexPath +"::"+ linenumber);
 
