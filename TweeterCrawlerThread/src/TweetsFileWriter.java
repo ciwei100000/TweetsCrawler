@@ -1,6 +1,3 @@
-package TweeterCrawlerThread;
-
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.concurrent.BlockingQueue;

@@ -1,5 +1,3 @@
-package TweeterCrawlerThread;
-
 import org.apache.commons.lang3.StringUtils;
 import twitter4j.*;
 import twitter4j.conf.ConfigurationBuilder;

@@ -2,16 +2,17 @@ package TweetsIndexer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
-
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Stack;
 
 public class TweetsIndexMain {
 
@@ -54,7 +55,6 @@ public class TweetsIndexMain {
             IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 
             if (create) {
-
                 iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
             } else {
                 iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
@@ -63,7 +63,61 @@ public class TweetsIndexMain {
             IndexWriter writer = new IndexWriter(dir, iwc);
             TweetsIndexer tweetsIndexer = new TweetsIndexer(writer);
 
-            BufferedReader br = new BufferedReader(new FileReader(docsPath));
+            File file = new File(docsPath);
+
+            if (file.exists()) {
+                Stack<File> fileStack = new Stack<>();
+                if (file.isDirectory()) {
+                    File[] files = file.listFiles();
+                    try {
+                        for (File file2 : files) {
+                            if (file2.isDirectory()) {
+                                fileStack.push(file2);
+                            } else {
+                                doIndex(tweetsIndexer, file2.getAbsolutePath());
+                            }
+                        }
+                        File temp_file;
+                        while (!fileStack.isEmpty()) {
+                            temp_file = fileStack.pop();
+                            files = temp_file.listFiles();
+                            for (File file2 : files) {
+                                if (file2.isDirectory()) {
+                                    fileStack.push(file2);
+                                } else {
+                                    doIndex(tweetsIndexer, file2.getAbsolutePath());
+                                }
+                            }
+                        }
+
+                    } catch (NullPointerException ex) {
+                        System.out.println("No directories in the directories");
+                    }
+                } else {
+                    doIndex(tweetsIndexer, file.getAbsolutePath());
+                }
+            } else {
+                System.out.println("Directory does not exist !");
+            }
+
+            Date end = new Date();
+
+            System.out.println(end.getTime() - start.getTime() + " total milliseconds");
+
+            writer.close();
+
+        } catch (Exception ex) {
+            System.out.println(" caught a " + ex.getClass() +
+                    "\n with message: " + ex.getMessage());
+        }
+
+    }
+
+    private static void doIndex(TweetsIndexer tweetsIndexer, String docPath) {
+
+        try {
+
+            BufferedReader br = new BufferedReader(new FileReader(docPath));
             String line;
 
             String[] wordsarray;
@@ -81,7 +135,7 @@ public class TweetsIndexMain {
 
                         if (StringUtils.isNumeric(wordsarray[0]) && StringUtils.isNumeric(wordsarray[1]) && Long.valueOf(wordsarray[1]) > 100000) {
 
-                            tweetsIndexer.Indexing(line + "\t" + indexPath +"::"+ linenumber);
+                            tweetsIndexer.Indexing(line + "\t" + docPath + "::" + linenumber);
 
                         }
 
@@ -90,15 +144,9 @@ public class TweetsIndexMain {
                     }
                 }
             }
-            writer.close();
-
-            Date end = new Date();
-
-            System.out.println(end.getTime() - start.getTime() + " total milliseconds");
 
         } catch (Exception ex) {
-            System.out.println(" caught a " + ex.getClass() +
-                    "\n with message: " + ex.getMessage());
+            System.out.println("Error: " + docPath + "\t" + ex.getMessage());
         }
 
     }

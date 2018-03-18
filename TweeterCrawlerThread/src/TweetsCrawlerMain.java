@@ -1,5 +1,3 @@
-package TweeterCrawlerThread;
-
 import TweetsIndexer.TweetsIndexer;
 import twitter4j.Twitter;
 
